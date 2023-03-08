@@ -1,13 +1,38 @@
-import { Center, Sparkles, useGLTF, useTexture } from "@react-three/drei";
+import {
+  Center,
+  shaderMaterial,
+  Sparkles,
+  useGLTF,
+  useTexture,
+} from "@react-three/drei";
 import portalFragmentShader from "@/shaders/portal/fragment.glsl";
 import portalVertexShader from "@/shaders/portal/vertex.glsl";
+import { extend, useFrame } from "@react-three/fiber";
+import { useRef } from "react";
+import { Color } from "three";
+
+const PortalMaterial = shaderMaterial(
+  { uTime: 0 },
+  portalVertexShader,
+  portalFragmentShader
+);
+
+extend({ PortalMaterial });
 
 interface IProps {}
 
-const PortalModel: React.FC<IProps> = () => {
+const WorldScene: React.FC<IProps> = () => {
   const portal: any = useGLTF("/models/portal.glb");
   const texture = useTexture("/textures/baked.jpg");
   texture.flipY = false;
+
+  const portalMaterialRef = useRef(null);
+
+  useFrame((state, delta) => {
+    if (portalMaterialRef.current) {
+      (portalMaterialRef.current as any).uTime += delta;
+    }
+  });
 
   return (
     <>
@@ -20,25 +45,21 @@ const PortalModel: React.FC<IProps> = () => {
           geometry={portal.nodes.poleLightLeft.geometry}
           position={portal.nodes.poleLightLeft.position}
         >
-          <meshBasicMaterial color="#FD8700FF" />
+          <meshBasicMaterial color={new Color("#faf189")} />
         </mesh>
 
         <mesh
           geometry={portal.nodes.poleLightRight.geometry}
           position={portal.nodes.poleLightRight.position}
         >
-          <meshBasicMaterial color="#FD8700FF" />
+          <meshBasicMaterial color={new Color("#faf389")} />
         </mesh>
 
         <mesh
           geometry={portal.nodes.portalLight.geometry}
           position={portal.nodes.portalLight.position}
         >
-          <shaderMaterial
-            fragmentShader={portalFragmentShader}
-            vertexShader={portalVertexShader}
-          />
-          {/*<meshBasicMaterial color="#FFFFFF" />*/}
+          <portalMaterial ref={portalMaterialRef} />
         </mesh>
       </Center>
       <Sparkles
@@ -52,4 +73,4 @@ const PortalModel: React.FC<IProps> = () => {
   );
 };
 
-export default PortalModel;
+export default WorldScene;
